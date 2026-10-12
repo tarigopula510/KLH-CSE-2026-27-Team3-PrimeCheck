@@ -1,0 +1,116 @@
+```java
+package com.primetest.algorithm;
+
+import java.math.BigInteger;
+import java.security.SecureRandom;
+
+public class MillerRabin {
+
+    private final SecureRandom random = new SecureRandom();
+
+    public boolean isProbablyPrime(BigInteger n, int iterations) {
+        if (iterations < 1) {
+            throw new IllegalArgumentException(
+                "Iterations must be at least 1"
+            );
+        }
+
+        if (n.compareTo(BigInteger.TWO) < 0) {
+            return false;
+        }
+
+        if (n.equals(BigInteger.TWO) ||
+            n.equals(BigInteger.valueOf(3))) {
+            return true;
+        }
+
+        if (!n.testBit(0)) {
+            return false;
+        }
+
+        BigInteger nMinusOne = n.subtract(BigInteger.ONE);
+        BigInteger d = nMinusOne;
+        int s = 0;
+
+        while (!d.testBit(0)) {
+            d = d.shiftRight(1);
+            s++;
+        }
+
+        for (int i = 0; i < iterations; i++) {
+            BigInteger a = randomBase(n);
+            BigInteger x = a.modPow(d, n);
+
+            if (x.equals(BigInteger.ONE) ||
+                x.equals(nMinusOne)) {
+                continue;
+            }
+
+            boolean passed = false;
+
+            for (int r = 1; r < s; r++) {
+                x = x.multiply(x).mod(n);
+
+                if (x.equals(nMinusOne)) {
+                    passed = true;
+                    break;
+                }
+
+                if (x.equals(BigInteger.ONE)) {
+                    return false;
+                }
+            }
+
+            if (!passed) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private BigInteger randomBase(BigInteger n) {
+        BigInteger upper = n.subtract(BigInteger.TWO);
+        BigInteger a;
+
+        do {
+            a = new BigInteger(upper.bitLength(), random);
+        } while (a.compareTo(BigInteger.TWO) < 0 ||
+                 a.compareTo(upper) > 0);
+
+        return a;
+    }
+
+    public double errorProbabilityUpperBound(int iterations) {
+        if (iterations < 1) {
+            throw new IllegalArgumentException(
+                "Iterations must be at least 1"
+            );
+        }
+
+        return Math.pow(0.25, iterations);
+    }
+
+    public double confidencePercentage(int iterations) {
+        return (1.0 - errorProbabilityUpperBound(iterations)) * 100;
+    }
+
+    public static void main(String[] args) {
+        MillerRabin mr = new MillerRabin();
+
+        BigInteger number = new BigInteger("97");
+        int iterations = 10;
+
+        boolean result = mr.isProbablyPrime(number, iterations);
+        double error = mr.errorProbabilityUpperBound(iterations);
+        double confidence = mr.confidencePercentage(iterations);
+
+        System.out.println("Number: " + number);
+        System.out.println("Result: " +
+            (result ? "Probably Prime" : "Composite"));
+        System.out.println("Iterations: " + iterations);
+        System.out.println("Error Probability Upper Bound: " + error);
+        System.out.println("Confidence Percentage: " + confidence + "%");
+    }
+}
+```
